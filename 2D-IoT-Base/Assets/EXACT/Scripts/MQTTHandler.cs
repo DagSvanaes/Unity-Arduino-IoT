@@ -41,7 +41,7 @@ namespace Exact
         ///</summary>
         ///<param name="hostaddress">MQTT broker's ip on the network. Defaults to 127.0.0.1.</param>
         ///<param name="port">MQTT broker's port on the network. Defaults to 1883.</param>
-        public MQTTHandler(string hostaddress = "127.0.0.1", int port = 1883)
+        public MQTTHandler(string hostaddress = "192.168.4.1", int port = 1883)
         {
             connectThread = new Thread(() =>
             {

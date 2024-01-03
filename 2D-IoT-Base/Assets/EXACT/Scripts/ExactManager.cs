@@ -16,7 +16,7 @@ namespace Exact
 
         private void Awake()
         {
-            Debug.Log("Creating MQTTHandler");
+            Debug.Log("Creating MQTTHandler" + settings.host + settings.port);
             mqttHandler = new MQTTHandler(settings.host, settings.port);
 
        //     foreach (Device device in FindObjectsOfType<Device>()) // DS 030123. Obsolete Warning CS0618
