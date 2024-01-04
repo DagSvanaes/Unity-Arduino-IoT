@@ -12,6 +12,8 @@ namespace Exact.Example
 
         [SerializeField, OnValueChanged("OnVolumeChanged"), Range(0, 1)]
         float volume = 1;
+        AudioSource audioSource;
+        int frequency;
 
         protected override void Awake()
         {
@@ -21,13 +23,30 @@ namespace Exact.Example
             audioSource.playOnAwake = false;
             audioSource.spatialBlend = 0; // Force 2D sound
             audioSource.Stop(); // Avoids the audiosource starting to play automatically
-
             audioSource.volume = volume;
         }
 
         public void OnConnect()
         {
             SetVolume(volume, true);
+        }
+
+        // DS 04.01.2023. Return a clip with sine audio
+        private AudioClip CreateToneAudioClip(float frequency, float sampleDurationSecs)  // ChatGPT
+        {
+            int sampleRate = 44100; // Standard sample rate
+            int sampleLength = (int)(sampleRate * sampleDurationSecs);
+            float[] samples = new float[sampleLength];
+
+            for (int i = 0; i < sampleLength; i++)
+            {
+                float t = i / (float)sampleRate;
+                samples[i] = Mathf.Sin(2 * Mathf.PI * frequency * t);
+            }
+
+            AudioClip clip = AudioClip.Create("SineWaveTone", sampleLength, 1, sampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
         }
 
         ///<summary>
@@ -41,6 +60,9 @@ namespace Exact.Example
             this.frequency = frequency;
             string payload = frequency.ToString() + "/" + Mathf.RoundToInt(duration * 1000).ToString();
             SendAction("tone", payload);
+            AudioClip clip = CreateToneAudioClip(frequency, 1f); // DS. One second clip.
+            audioSource.clip = clip;
+            audioSource.loop = true;  // Loop the clip forever.
             audioSource.Play();
             StartCoroutine(StopAudioAfterDuration(duration));
         }
@@ -52,6 +74,7 @@ namespace Exact.Example
         {
             SendAction("no_tone", 0);
             audioSource.Stop();
+            audioSource.loop = false;
         }
 
         /// <summary>
@@ -87,40 +110,10 @@ namespace Exact.Example
         // Audio player and sine wave generator 
         //
 
-        public float sampleRate = 44100;
-        public float waveLengthInSeconds = 2.0f;
-
-        AudioSource audioSource;
-        int timeIndex = 0;
-        int frequency;
-
         /// <summary>
         /// If OnAudioFilterRead is implemented, Unity will insert a custom filter into the audio DSP chain.
         /// OnAudioFilterRead is called every time a chunk of audio is sent to the filter.
         /// </summary>
-        private void OnAudioFilterRead(float[] data, int channels)
-        {
-            for (int i = 0; i < data.Length; i += channels)
-            {
-                float value = CreateSine(timeIndex, frequency, sampleRate);
-                data[i] = value;
 
-                if (channels == 2)
-                    data[i + 1] = value;
-
-                timeIndex++;
-
-                // If timeIndex gets too big, reset it to 0
-                if (timeIndex >= (sampleRate * waveLengthInSeconds))
-                {
-                    timeIndex = 0;
-                }
-            }
-        }
-
-        private float CreateSine(int timeIndex, int frequency, float sampleRate)
-        {
-            return Mathf.Sin(2 * Mathf.PI * timeIndex * frequency / sampleRate);
-        }
     }
 }
